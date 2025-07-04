@@ -1,0 +1,23 @@
+layout:
+  grid:
+    rows: 2
+    columns: 2
+    elements:
+      - id: temp_tank1
+        position: [0, 0]
+        type: sensor
+        label: "Tank 1 Temperature"
+        graph: true
+      - id: heater1
+        position: [1, 0]
+        type: actuator
+        label: "Heater 1 Power"
+      - id: temp_tank2
+        position: [0, 1]
+        type: sensor
+        label: "Tank 2 Temperature"
+        graph: true
+      - id: heater2
+        position: [1, 1]
+        type: actuator
+        label: "Heater 2 Power"
