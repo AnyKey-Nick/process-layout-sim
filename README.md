@@ -10,5 +10,8 @@ This project is an educational simulator that demonstrates simplified process co
   * adjust setpoint and PID gains at runtime
   * switch between P/PI/PID modes
   * start or pause the simulation loop
+* Interactive layout editor to create new dashboards
+* Signal injection and alarm monitoring for each process
+* Basic stability analysis utilities
 
 This repository provides a minimal reference implementation. It is not a fully polished industrial system, but a starting point for experimentation.

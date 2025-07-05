@@ -14,6 +14,12 @@ processes:
       Kd: 0.2
       output_limits: [0, 100]
       controlled_by: heater1
+    signal:
+      type: sine
+      amplitude: 5
+      frequency: 0.1
+    alarm:
+      high: 90
   - name: temp_tank2
     model: first_order
     parameters:
@@ -27,3 +33,5 @@ processes:
       Kp: 1.5
       output_limits: [0, 100]
       controlled_by: heater2
+    alarm:
+      high: 80

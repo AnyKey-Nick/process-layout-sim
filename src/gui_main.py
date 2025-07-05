@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 
 from .layout_engine import load_layout
 from .simulator_core import Simulator
+from .gui_layout_editor import LayoutEditor
 
 
 class PlotWidget(QtWidgets.QWidget):
@@ -41,11 +42,17 @@ class Dashboard(QtWidgets.QMainWindow):
     def __init__(self, layout_path: str, process_path: str):
         super().__init__()
         self.setWindowTitle("Process Simulator")
+        self.layout_cfg_path = layout_path
         self.layout_cfg = load_layout(layout_path)
         self.sim = Simulator(process_path)
         self.widgets: Dict[str, QtWidgets.QWidget] = {}
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
+        menubar = self.menuBar()
+        edit_action = menubar.addAction("Edit Layout")
+        edit_action.triggered.connect(self.edit_layout)
+        self.alarm_label = QtWidgets.QLabel()
+        self.statusBar().addPermanentWidget(self.alarm_label)
 
         main_layout = QtWidgets.QHBoxLayout(central)
         grid_widget = QtWidgets.QWidget()
@@ -84,6 +91,11 @@ class Dashboard(QtWidgets.QMainWindow):
                 w.append(t, val)
             elif isinstance(w, QtWidgets.QLabel):
                 w.setText(f"{val:.2f}")
+        alarms = [name for name, active in self.sim.alarm_status().items() if active]
+        if alarms:
+            self.alarm_label.setText("Alarm: " + ", ".join(alarms))
+        else:
+            self.alarm_label.setText("")
 
     def _build_control_panel(self) -> QtWidgets.QWidget:
         panel = QtWidgets.QWidget()
@@ -123,6 +135,13 @@ class Dashboard(QtWidgets.QMainWindow):
             layout.addWidget(box)
         layout.addStretch()
         return panel
+
+    def edit_layout(self) -> None:
+        path = Path(__file__).resolve().parent.parent / "config" / "layout.yaml"
+        editor = LayoutEditor(str(path), self)
+        if editor.exec_() == QtWidgets.QDialog.Accepted:
+            self.layout_cfg = load_layout(path)
+            QtWidgets.QMessageBox.information(self, "Layout", "Layout saved. Please restart to see changes")
 
     def _toggle_timer(self) -> None:
         if self.timer.isActive():

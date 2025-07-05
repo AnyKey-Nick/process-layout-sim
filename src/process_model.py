@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
+import random
 
 
 @dataclass
@@ -28,6 +29,9 @@ class FirstOrderProcess(ProcessModel):
         value = self.state.value
         dTdt = -((value - ambient) / tau) + (u / capacity)
         value += dTdt * dt
+        sigma = self.params.get('noise', 0.0)
+        if sigma:
+            value += random.gauss(0, sigma)
         self.state.value = value
         self.state.derivative = dTdt
         return value
@@ -48,6 +52,9 @@ class SecondOrderProcess(ProcessModel):
         accel = gain * u - 2 * zeta * wn * self.velocity - (wn ** 2) * self.state.value
         self.velocity += accel * dt
         self.state.value += self.velocity * dt
+        sigma = self.params.get('noise', 0.0)
+        if sigma:
+            self.state.value += random.gauss(0, sigma)
         self.state.derivative = self.velocity
         return self.state.value
 
