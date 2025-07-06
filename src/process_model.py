@@ -28,6 +28,11 @@ class FirstOrderProcess(ProcessModel):
         value = self.state.value
         dTdt = -((value - ambient) / tau) + (u / capacity)
         value += dTdt * dt
+        # optional process noise
+        noise = self.params.get('noise_std', 0.0)
+        if noise:
+            import random
+            value += random.gauss(0.0, noise)
         self.state.value = value
         self.state.derivative = dTdt
         return value
@@ -48,6 +53,11 @@ class SecondOrderProcess(ProcessModel):
         accel = gain * u - 2 * zeta * wn * self.velocity - (wn ** 2) * self.state.value
         self.velocity += accel * dt
         self.state.value += self.velocity * dt
+        # optional process noise
+        noise = self.params.get('noise_std', 0.0)
+        if noise:
+            import random
+            self.state.value += random.gauss(0.0, noise)
         self.state.derivative = self.velocity
         return self.state.value
 

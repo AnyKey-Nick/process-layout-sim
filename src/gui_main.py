@@ -12,6 +12,7 @@ from matplotlib.figure import Figure
 
 from .layout_engine import load_layout
 from .simulator_core import Simulator
+from .stability_analyzer import StabilityAnalyzer
 
 
 class PlotWidget(QtWidgets.QWidget):
@@ -44,6 +45,7 @@ class Dashboard(QtWidgets.QMainWindow):
         self.layout_cfg = load_layout(layout_path)
         self.sim = Simulator(process_path)
         self.widgets: Dict[str, QtWidgets.QWidget] = {}
+        self.analyzers: Dict[str, StabilityAnalyzer] = {}
         central = QtWidgets.QWidget()
         self.setCentralWidget(central)
 
@@ -59,6 +61,7 @@ class Dashboard(QtWidgets.QMainWindow):
             label = element.get('label', element['id'])
             if element['type'] == 'sensor':
                 widget = PlotWidget()
+                self.analyzers[element['id']] = StabilityAnalyzer()
             else:
                 widget = QtWidgets.QLabel('0.0')
                 widget.setAlignment(QtCore.Qt.AlignCenter)
@@ -82,8 +85,17 @@ class Dashboard(QtWidgets.QMainWindow):
             w = self.widgets.get(key)
             if isinstance(w, PlotWidget):
                 w.append(t, val)
+                analyzer = self.analyzers.get(key)
+                if analyzer:
+                    state = analyzer.update(val)
+                    w.setToolTip(state)
             elif isinstance(w, QtWidgets.QLabel):
                 w.setText(f"{val:.2f}")
+            alarm = self.sim.alarms.get(key)
+            if alarm and alarm.active:
+                w.setStyleSheet("background-color: rgb(255,128,128)")
+            elif alarm:
+                w.setStyleSheet("")
 
     def _build_control_panel(self) -> QtWidgets.QWidget:
         panel = QtWidgets.QWidget()

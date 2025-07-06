@@ -7,6 +7,8 @@ import yaml
 
 from .pid_controller import PIDConfig, PIDController
 from .process_model import create_process, ProcessModel
+from .signal_generator import SignalConfig, SignalGenerator
+from .alarm_monitor import AlarmConfig, AlarmMonitor
 
 
 class Simulator:
@@ -15,6 +17,8 @@ class Simulator:
             cfg = yaml.safe_load(fh)
         self.processes: Dict[str, ProcessModel] = {}
         self.controllers: Dict[str, PIDController] = {}
+        self.signals: Dict[str, SignalGenerator] = {}
+        self.alarms: Dict[str, AlarmMonitor] = {}
         for item in cfg.get('processes', []):
             name = item['name']
             model_name = item['model']
@@ -32,6 +36,12 @@ class Simulator:
                     output_limits=tuple(ctrl_cfg.get('output_limits', (0.0, 1.0))),
                 )
                 self.controllers[name] = PIDController(pid_cfg)
+            sig_cfg = item.get('signal')
+            if sig_cfg:
+                self.signals[name] = SignalGenerator(SignalConfig(**sig_cfg))
+            alarm_cfg = item.get('alarm')
+            if alarm_cfg:
+                self.alarms[name] = AlarmMonitor(AlarmConfig(**alarm_cfg))
         self.last_time = time.time()
 
     def step(self, dt: float | None = None) -> Dict[str, float]:
@@ -40,11 +50,18 @@ class Simulator:
             dt = now - self.last_time
         self.last_time = now
         outputs: Dict[str, float] = {}
+        t = now
         for name, proc in self.processes.items():
             ctrl = self.controllers.get(name)
             u = 0.0
             if ctrl:
                 u = ctrl.compute(proc.state.value, dt)
+            signal = self.signals.get(name)
+            if signal:
+                u += signal.value(t)
             value = proc.update(u, dt)
+            alarm = self.alarms.get(name)
+            if alarm:
+                alarm.check(value)
             outputs[name] = value
         return outputs
